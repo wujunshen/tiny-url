@@ -1,0 +1,66 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: tiny-url
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/tiny_url?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&autoReconnect=true&rewriteBatchedStatements=TRUE&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: HikariCP
+      auto-commit: true
+      connection-test-query: select 1
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      maximum-pool-size: 100
+      minimum-idle: 100
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+mybatis:
+  mapperLocations: classpath*:sqlmap/*.xml
+  type-aliases-package: com.wujunshen.tinyurl.entity
+
+server:
+  port: 8012
+tu:
+  domain: http://localhost:8012
+  tinyUrlDomain: http://localhost:8012/t/
+#swagger config
+swagger:
+  enable: true
+  contextPath: /
+  #输入目前已知所有版本号集合,即使重复了也可以,有去重功能
+  versions: v1.0,v1.1,v1.2,v1.0
+  #缺省配置内容为:frank_wjs@hotmail.com
+  contact-email: frank_wjs@hotmail.com
+  #缺省配置内容为:黑暗浪子
+  contact-name: 如有任何疑问，请联系我
+  #缺省配置内容为:https://www.iteye.com/blog/user/darkranger
+  contact-url: http://www.google.com
+  #缺省配置内容为:文档内容仅供参考
+  description: 接口文档说明
+  #缺省配置内容为:Apache License Version 2.0
+  license: license
+  #缺省配置内容为:http://www.apache.org/licenses/LICENSE-2.0.html
+  license-url: http://www.license.com
+  #缺省配置内容为:API文档
+  title: 自定义标题名
+#redis settings
+redis:
+  cluster:
+    max-redirects: 6   # 获取失败最大重定向次数
+    nodes: 127.0.0.1:7001,127.0.0.1:7002,127.0.0.1:7003,127.0.0.1:7004,127.0.0.1:7005,127.0.0.1:7006
+    time-out: 60000
+    password:
+  pool:
+    max-active: 1000 #连接池最大的连接数，若使用负值表示没有限制
+    max-wait: 10000 #连接池最大阻塞等待时间
+    max-idle: 100 #最大空闲连接数
+    min-idle: 10 #最小空闲连接数
+#snowflake settings
+generate:
+  worker: 100
