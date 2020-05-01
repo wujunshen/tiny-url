@@ -11,7 +11,7 @@ like https://app.bitly.com url shorten function with springboot
 
 1.DNS首先解析获得 https://bit.ly/ 的 IP 地址
 
-2.DNS 获得 IP 地址以后（比如：192.168.0.1），会向这个地址发送 HTTP GET 请求，查询短码 2sad9ss22
+2.DNS 获得 IP 地址以后（比如：192.168.0.1），会向这个地址发送 HTTP GET 请求，查询短链接 2sad9ss22
 
 3.https://bit.ly/ 服务器会通过短链接后缀 2sad9ss22 获取对应的长链接
 
@@ -58,7 +58,7 @@ like https://app.bitly.com url shorten function with springboot
 
 这样可区分哪些长连接是用户自定义还是系统自动生成的，还可以不浪费被自定义短链接占用的 id
 
-短码位数表
+短链接位数表
 
 |位数         | 个数           | 区间 |
 | :-------------: |:-------------:| :-----:|
@@ -69,11 +69,11 @@ like https://app.bitly.com url shorten function with springboot
 | 5位      | 约 9.1亿      |   14776336 - 916132831 |
 | 6位 | 约 568亿     |   916132832 - 56800235583 |
 
-建议自定义短链接位数从6位开始自定义,这样短码占用的可能性相对低点
+建议自定义短链接位数从6位开始自定义,这样短链接占用的可能性相对低点
 
 #### 自增id顺序混淆
 
-本项目使用的自增id序列算法,容易被人反推算出id,因此对与id需要进行一定的混淆
+本项目使用的自增id序列算法,容易被人反推算出id,因此对id需要进行一定的混淆
 
 具体可见[com.wujunshen.tinyurl.common.utils.EncodeUtils](https://github.com/wujunshen/tiny-url/blob/master/src/main/java/com/wujunshen/tinyurl/common/utils/EncodeUtils.java)
 类实现,相当简单,再此不展开说明
@@ -92,7 +92,7 @@ create table tb_url_mapping
     origin_url     varchar(300)                        not null comment '原始长链接',
     origin_url_md5 varchar(32)                         not null comment '长链接md5值',
     tiny_url       varchar(10)                         not null comment '短链接',
-    url_type       int(1)    default 0                 not null comment '是系统自动生成还是自定义的短码类型,系统: “system”,自定义: “custom”
+    url_type       int(1)    default 0                 not null comment '是系统自动生成还是自定义的短链接类型,系统: “system”,自定义: “custom”
 0为system,1为custom 缺省为0',
     create_time    timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '生成时间',
     update_time    timestamp default CURRENT_TIMESTAMP not null comment '最后更新时间',
