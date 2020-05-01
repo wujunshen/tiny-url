@@ -115,3 +115,32 @@ create table tb_url_mapping
 本项目redis缓存只是一个简单的key-value形式,key为短链接,value为长链接
 
 主要是为了在点击短链接时,不需要从数据库,而是直接从redis缓存中获取原来的长链接,并做302转向
+
+#### 其他补充
+
+本项目基于2.2.6.RELEASE版本的springboot开发,数据库连接池使用的是缺省的hikari,并增加了lombok实现
+
+所用的相关starter是我自定义的,具体代码和使用说明见[https://gitee.com/darkranger/my-springboot-starter](https://gitee
+.com/darkranger/my-springboot-starter)
+
+包括下列这些,id自增序列使用的是snowflake雪花算法,缓存是redis集群,生成短链接接口使用了swagger做接口文档说明
+
+````
+<dependency>
+	<groupId>com.wujunshen</groupId>
+	<artifactId>swagger-spring-boot-starter</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+</dependency>
+<dependency>
+	<groupId>com.wujunshen</groupId>
+	<artifactId>snowflake-spring-boot-starter</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+</dependency>
+<dependency>
+	<groupId>com.wujunshen</groupId>
+	<artifactId>redis-spring-boot-starter</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+</dependency>	    
+````
+
+另外单元测试使用的是Junit5相关注解,有兴趣的还可以看看如何在Junit5下实现TestRestTemplate和MockMvc测试controller类
