@@ -120,8 +120,7 @@ create table tb_url_mapping
 
 本项目基于2.2.6.RELEASE版本的springboot开发,数据库连接池使用的是缺省的hikari,并增加了lombok实现
 
-所用的相关starter是我自定义的,具体代码和使用说明见[https://gitee.com/darkranger/my-springboot-starter](https://gitee
-.com/darkranger/my-springboot-starter)
+所用的相关starter是我自定义的,具体代码和使用说明见[https://gitee.com/darkranger/my-springboot-starter](https://gitee.com/darkranger/my-springboot-starter)
 
 包括下列这些,id自增序列使用的是snowflake雪花算法,缓存是redis集群,生成短链接接口使用了swagger做接口文档说明
 
