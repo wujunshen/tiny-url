@@ -1,101 +1,93 @@
 # tiny-url
 like https://app.bitly.com url shorten function with springboot
 
-#### 什么是短链接?
+## What are short links?
 
-就是把普通网址，转换成比较短的网址。比如：https://bit.ly/2sad9ss22 这种，在短消息推送这种限制字数的场景下。好处不言而喻。短、字符少、美观、便于发布、传播
+Short links are shortened versions of long URLs. For example:https://bit.ly/2sad9ss22. They are useful in situations with character limits, like short messaging. The benefits are obvious - short, concise, aesthetically pleasing, easy to publish and propagate.
 
-#### 原理
+## How it works
 
-假设浏览器里输入  https://bit.ly/2sad9ss22
+For example, when entering https://bit.ly/2sad9ss22 in a browser:
 
-1.DNS首先解析获得 https://bit.ly/ 的 IP 地址
+1.DNS first resolves the IP address of https://bit.ly/
 
-2.DNS 获得 IP 地址以后（比如：192.168.0.1），会向这个地址发送 HTTP GET 请求，查询短链接 2sad9ss22
+2.After obtaining the IP address (e.g. 192.168.0.1), the browser sends a HTTP GET request to this address to query the short link 2sad9ss22
 
-3.https://bit.ly/ 服务器会通过短链接后缀 2sad9ss22 获取对应的长链接
+3.The https://bit.ly/ server looks up the corresponding long URL based on the short link suffix 2sad9ss22
 
-4.请求通过 HTTP 302 转到对应的长链接 https://cn.bing.com/
+4.The request is redirected via a HTTP 302 to the long URL https://cn.bing.com/
 
-#### 为什么是 302 ?
+### Why use 302?
 
-301是永久重定向，302是临时重定向。短链接一经生成就不会变化，301虽然符合 http 语义。同时也对服务器压力也会有一定减少
+301 is permanent redirect, 302 is temporary redirect. Although 301 semantically fits better for short links which are fixed once generated, it also puts more pressure on the server.
 
-但我们就无法统计短链接被点击的次数。不能进行后续的大数据统计分析。
+302 allows counting click times for analytics. Although 302 increases server load, it enables better analytics.
 
-而302可统计被点击次数,,虽然302会增加服务器压力，但方便后续大数据统计分析
+## Implementation
+Currently there are 2 algorithms to generate short links:
 
-#### 本项目实现算法
-目前短链接服务有两种实现算法
+1.Auto-incrementing ID
 
-1.自增序列算法 
+2.Hash digest
 
-2.摘要算法
+This project uses the first approach.
 
-本项目使用的是第1种自增序列算法
+### Auto-incrementing ID algorithm
 
-#### 自增序列算法说明
+It auto-increments an ID, maps each base-10 ID to a base-62 number 1:1 so there are no collisions. This utilizes the characteristic that converting a lower base to a higher base will result in fewer digits.
 
-设置 id 自增，一个 10进制 id 对应一个 62进制的数值，1对1，也就不会出现重复的情况。这个利用的就是低进制转化为高进制时，字符数会减少的特性。
+Short links are usually 6 digits. Each digit is one of 62 characters [a-z A-Z 0-9]. So with 6 digits, there are 62^6 = 568 billion possible combinations.
 
-短址的长度一般设为 6 位，而每一位是由 [a - z, A - Z, 0 - 9] 总共 62 个字母组成的，所以 6 位的话，总共会有 62^6 ~= 568亿种组合
+#### workflow
 
-#### 项目流程图
+In addition to the algorithm, this project also implements custom short links like Bitly, and uses Redis caching to reduce database load when generating short links.
 
-本项目除了实现上述算法之外,另外学习bitly增加短链接自定义功能,且使用了redis缓存来减轻生成短链接时,对数据库的读取压力
-
-下列流程图来源百度短链接服务实现流程图,和本项目代码略微有点出入,具体以代码为准
+The workflow diagram below is based on Baidu's short link service, with some differences from the actual project code.
 
 ![image](https://github.com/wujunshen/tiny-url/blob/master/image/image2020-4-22_19-15-22.png)
 
-#### 短链接自定义
+#### Custom short links
 
-下面具体说明一下怎么实现自定义短链接的
+A url_type field is added to the database table to mark whether a short link is user-customized or system-generated.
 
-数据库表增加一个类型为url_type 字段，用来标记短链接是用户自定义生成的，还是系统自动生成的。
+If a short link has been customized before, its type is marked as customized. When generating short links by ID, if the calculated short link is already taken, the system can pick a record with type customized, and use its ID to calculate the short link.
 
-如果有自定义过短链接，把它的类型标记自定义。每次根据 id 计算短链接时，若发现对应的短链接被占用，可从类型为自定义的记录里选取一条记录，用它的 id 去计算短链接。
+This differentiates whether a long URL is user-customized or system-generated. It also avoids wasting IDs occupied by customized short links.
 
-这样可区分哪些长连接是用户自定义还是系统自动生成的，还可以不浪费被自定义短链接占用的 id
+Short link digits table:
 
-短链接位数表
-
-|位数         | 个数           | 区间 |
+|Digits         | Count           | Range |
 | :-------------: |:-------------:| :-----:|
-| 1位     | 62 | 0 - 61 |
-| 2位      | 3844      |   62 - 3843 |
-| 3位 | 约 23万     |   3844 - 238327 |
-| 4位     | 约 1400万 | 238328 - 14776335 |
-| 5位      | 约 9.1亿      |   14776336 - 916132831 |
-| 6位 | 约 568亿     |   916132832 - 56800235583 |
+| 1     | 62 | 0 - 61 |
+| 2      | 3844      |   62 - 3843 |
+| 3 | ~230,000     |   3844 - 238327 |
+| 4     | ~14 million | 238328 - 14776335 |
+| 5      | ~910 million      |   14776336 - 916132831 |
+| 6 | ~56.8 billion     |   916132832 - 56800235583 |
 
-建议自定义短链接位数从6位开始自定义,这样短链接占用的可能性相对低点
+It is recommended to start custom short links at 6 digits to minimize collisions.
 
-#### 自增id顺序混淆
+#### Obfuscating the incrementing ID
 
-本项目使用的自增id序列算法,容易被人反推算出id,因此对id需要进行一定的混淆
+The auto-incrementing ID is easily reversible, so the project does some obfuscation. See [com.wujunshen.tinyurl.common.utils.EncodeUtils](https://github.com/wujunshen/tiny-url/blob/master/src/main/java/com/wujunshen/tinyurl/common/utils/EncodeUtils.java) for details.
 
-具体可见[com.wujunshen.tinyurl.common.utils.EncodeUtils](https://github.com/wujunshen/tiny-url/blob/master/src/main/java/com/wujunshen/tinyurl/common/utils/EncodeUtils.java)
-类实现,相当简单,再此不展开说明
+#### Database schema
 
-#### 数据库表说明
+A new tiny_url database contains table tb_url_mapping:
 
-新增数据库tiny_url,新建tb_url_mapping表
-
-DDL文件如下:
+DDL file:
 
 ````
 create table tb_url_mapping
 (
-    url_id         bigint auto_increment comment '主键'
+    url_id         bigint auto_increment comment 'primary key'
         primary key,
-    origin_url     varchar(300)                        not null comment '原始长链接',
-    origin_url_md5 varchar(32)                         not null comment '长链接md5值',
-    tiny_url       varchar(10)                         not null comment '短链接',
-    url_type       int(1)    default 0                 not null comment '是系统自动生成还是自定义的短链接类型,系统: “system”,自定义: “custom”
-0为system,1为custom 缺省为0',
-    create_time    timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '生成时间',
-    update_time    timestamp default CURRENT_TIMESTAMP not null comment '最后更新时间',
+    origin_url     varchar(300)                        not null comment 'original long url',
+    origin_url_md5 varchar(32)                         not null comment 'md5 of long url',
+    tiny_url       varchar(10)                         not null comment 'short link',
+    url_type       int(1)    default 0                 not null comment 'custom or system generated short link type, system: 0, custom: 1, default: 0',
+    create_time    timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment 'create time',
+    update_time    timestamp default CURRENT_TIMESTAMP not null comment 'last update time',
     constraint tb_url_mapping_origin_url_md5_uindex
         unique (origin_url_md5),
     constraint tb_url_mapping_tiny_url_uindex
@@ -103,26 +95,34 @@ create table tb_url_mapping
 );
 ````
 
-这里特别说明为啥会有origin_url_md5字段,以及做索引的目的:
+Purpose of the origin_url_md5 field and index:
 
-因为需要防止多次相同的长链接生成不同的短链接 id 这种情况，所以需要每次先根据长链接在数据库中找db是否存在相关记录
+To prevent the same long URL from generating different short link IDs, the system needs to first check if a record already exists for the long URL in the database.
 
-一般做法肯定是长链接加索引，但索引空间会很大，因此对长链接md5字段做索引，索引就会小很多。这样根据长链接的 md5
-查询相关记录即可。
+The common approach would be to put an index on the long URL itself. However, that index would be very large in size.
 
-#### Redis缓存使用
+Instead, an index is created on the md5 hash of the long URL. This index is much smaller in size.
 
-本项目redis缓存只是一个简单的key-value形式,key为短链接,value为长链接
+Looking up records by the md5 of the long URL allows finding existing records for a long URL efficiently.
 
-主要是为了在点击短链接时,不需要从数据库,而是直接从redis缓存中获取原来的长链接,并做302转向
+#### Redis caching
 
-#### 其他补充
+Redis caching uses a simple key-value store, with short link as key and long link as value.
 
-本项目基于2.2.6.RELEASE版本的springboot开发,数据库连接池使用的是缺省的hikari,并增加了lombok实现
+This allows redirecting from the short link by looking up the long link directly in Redis cache instead of the database.
 
-所用的相关starter是我自定义的,具体代码和使用说明见[https://gitee.com/darkranger/my-springboot-starter](https://gitee.com/darkranger/my-springboot-starter)
+## Additional
 
-包括下列这些,id自增序列使用的是snowflake雪花算法,缓存是redis集群,生成短链接接口使用了swagger做接口文档说明
+This project uses Spring Boot 2.2.6, Hikari connection pool, and Lombok.
+
+The related starters used are custom developed, the specific code and documentation can be found at:[https://gitee.com/darkranger/my-springboot-starter](https://gitee.com/darkranger/my-springboot-starter)
+
+These include the following:
+
+* ID auto increment uses the Snowflake algorithm
+* Caching uses Redis Cluster
+* The API for generating short links is documented with Swagger
+
 
 ````
 <dependency>
@@ -142,4 +142,4 @@ create table tb_url_mapping
 </dependency>	    
 ````
 
-另外单元测试使用的是Junit5相关注解,有兴趣的还可以看看如何在Junit5下实现TestRestTemplate和MockMvc测试controller类
+It also uses JUnit 5 for testing.
